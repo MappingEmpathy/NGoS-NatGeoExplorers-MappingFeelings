@@ -1,0 +1,86 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Word Cloud</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-cloud/1.2.5/d3.layout.cloud.js"></script>
+</head>
+<body>
+    <div id="wordCloud">Test</div>
+    <script>// Fetch data from the ArcGIS server
+        fetch(
+            "https://services7.arcgis.com/Xdh3DlaE15h8o0GW/arcgis/rest/services/survey123_2c9b190459e04d2db5ebfbf9b38cf755/FeatureServer/0/query?where=1%3D1&outFields=one_word_summary&returnGeometry=false&f=json"
+        )
+            .then((response) => response.json())
+            .then((data) => {
+                let summaryData = {};
+                const wordMapping = {
+                    'inspiration': 'inspired',
+                    'inspiring': 'inspired',
+                    'inspired': 'inspired',
+                    'recharging': 'energized/recharged',
+                    'recharched': 'energized/recharged',
+                    'invigorating': 'energized/recharged',
+                    'energizing': 'energized/recharged',
+                    'energized': 'energized/recharged'
+                };
+                data.features.forEach((feature) => {
+                    let phrase = feature.attributes.one_word_summary;
+                    if (phrase) {
+                        let words = phrase.split(' '); // Split the phrase into words
+                        words.forEach((word) => {
+                            word = word.trim().toLowerCase();  // Remove spaces, convert to lower case
+                            word = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");  // Remove punctuation
+
+                            if (wordMapping[word]) {
+                                word = wordMapping[word];  // Replace the word with the root word
+                            }
+                            if (summaryData[word]) {
+                                summaryData[word]++;
+                            } else {
+                                summaryData[word] = 1;
+                            }
+                        });
+                    }
+                });
+
+                // Create your word cloud with 'summaryData'
+                createWordCloud(summaryData);
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+            });
+
+        function createWordCloud(summaryData) {
+            const word_entries = Object.entries(summaryData).map(([key, value]) => ({ text: key, size: value }));
+            const fill = d3.scaleOrdinal(d3.schemeCategory10);
+
+            d3.layout.cloud().size([800, 600])
+                .words(word_entries)
+                .padding(5)
+                .rotate(() => ~~(Math.random() * 2) * 90)
+                .font("Impact")
+                .fontSize(d => d.size * 20)
+                .on("end", draw)
+                .start();
+
+            function draw(words) {
+                d3.select("#wordCloud").append("svg")
+                    .attr("width", 800)
+                    .attr("height", 600)
+                    .append("g")
+                    .attr("transform", "translate(400,300)")
+                    .selectAll("text")
+                    .data(words)
+                    .enter().append("text")
+                    .style("font-size", d => `${d.size}px`)
+                    .style("font-family", "Impact")
+                    .style("fill", (d, i) => fill(i))
+                    .attr("text-anchor", "middle")
+                    .attr("transform", d => `translate(${[d.x, d.y]})rotate(${d.rotate})`)
+                    .text(d => d.text);
+            }
+        }</script>
+</body>
+</html>
