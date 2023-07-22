@@ -56,7 +56,7 @@
             const word_entries = Object.entries(summaryData).map(([key, value]) => ({ text: key, size: value }));
             //const fill = d3.scaleOrdinal(d3.schemeCategory10);
             k = 20;//Object.keys(summaryData).length;
-            const fill = d3.scaleOrdinal(d3.interpolateGreys[k]);
+            const fill = d3.scaleOrdinal(d3.interpolateGreys(k));
 
             d3.layout.cloud().size([800, 600])
                 .words(word_entries)
